@@ -1,0 +1,72 @@
+version: '2'
+services:
+  opscenter:
+    image: "datastax/dse-opscenter"
+    container_name: "opscenter"
+    hostname: opsc
+    domainname: example.org
+    restart: always
+    ports:
+      - 8888:8888
+    environment:
+      - DS_LICENSE=accept
+    volumes:
+      - ./conf/opscenter:/config
+      - ./opscenter:/var/lib/opscenter
+      - ./opscenter-clusters:/opt/opscenter/conf/clusters
+  main_node:
+    image: "store/datastax/dse-server:5.1.6"
+    container_name: "dse"
+    hostname: dse
+    domainname: example.org
+    ports:
+    - "4040:4040"
+    - "7080:7080"
+    - "7199:7199"
+    - "8182:8182"
+    - "8983:8983"
+    - "9042:9042"
+    environment:
+      - DS_LICENSE=accept
+      - CLUSTER_NAME=main
+    command:
+     -s
+    # Allow DSE to lock memory with mlock
+    cap_add:
+    - IPC_LOCK
+    ulimits:
+      memlock: -1
+    links:
+      - opscenter
+    volumes:
+      - ./data:/var/lib/cassandra/data
+      - ./conf:/config
+      - ./logs:/var/lib/cassandra/commit_logs
+      - ./cache:/var/lib/cassandra/saved_caches
+      - ./confy:/etc/dse/conf
+  second_node:
+    image: "store/datastax/dse-server:5.1.6"
+    container_name: "dse2"
+    hostname: dse2
+    domainname: example.org
+    environment:
+      - DS_LICENSE=accept
+      - CLUSTER_NAME=main
+      - SEEDS=main_node
+    links:
+      - main_node
+    command:
+     -s
+    # Allow DSE to lock memory with mlock
+    cap_add:
+    - IPC_LOCK
+    ulimits:
+      memlock: -1
+    links:
+      - opscenter
+    volumes:
+      - ./data2:/var/lib/cassandra/data
+      - ./conf2:/config
+      - ./logs2:/var/lib/cassandra/commit_logs
+      - ./cache2:/var/lib/cassandra/saved_caches
+      - ./confy2:/etc/dse/conf
