@@ -275,6 +275,8 @@ docker exec -it dse cqlsh --ssl  -e "reload search index on demo.solr"
 docker exec -it dse cqlsh --ssl  -e "rebuild search index on demo.solr with options {deleteAll :true}"
 ```
 4.  Copy relevant files off the image and use the `strings` command to ensure encryption
+5. To generate more records with encryption turned on:
+`docker exec dse /opt/dse/demos/solr_stress/run-benchmark.sh --test-data=./resources/testCqlWrite.txt --loops 110000 --cqlSSL --cqlKeystore=/etc/dse/conf/keystore.dse --cqlKeystorePassword=cassandra --cqlTruststore=/etc/dse/conf/truststore.dse --cqlTruststorePassword=cassandra`
 
 ## Conclusion
 At this point, DSE is set up with encryption
