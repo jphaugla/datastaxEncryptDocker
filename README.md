@@ -53,23 +53,30 @@ use `echo $DSE_IP` and `echo $DSE_IP2` and `echo $DSE_JAVA` to view
         	http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html
    2. unzip the archive file `unzip jce_policy-8.zip`    
    3. Upload the archive file to all DSE servers using JAVA_HOME environment variable from step 1 
-```docker cp UnlimitedJCEPolicyJDK8/US_export_policy.jar dse:/$DSE_JAVA/jre/lib/security;
+```
+docker cp UnlimitedJCEPolicyJDK8/US_export_policy.jar dse:/$DSE_JAVA/jre/lib/security;
 ``` 
-```docker cp UnlimitedJCEPolicyJDK8/local_policy.jar dse:/$DSE_JAVA/jre/lib/security;
+```
+docker cp UnlimitedJCEPolicyJDK8/local_policy.jar dse:/$DSE_JAVA/jre/lib/security;
 ``` 
-```docker cp UnlimitedJCEPolicyJDK8/US_export_policy.jar dse2:/$DSE_JAVA/jre/lib/security;
+```
+docker cp UnlimitedJCEPolicyJDK8/US_export_policy.jar dse2:/$DSE_JAVA/jre/lib/security;
 ``` 
-```docker cp UnlimitedJCEPolicyJDK8/local_policy.jar dse2:/$DSE_JAVA/jre/lib/security
+```
+docker cp UnlimitedJCEPolicyJDK8/local_policy.jar dse2:/$DSE_JAVA/jre/lib/security
 ``` 
 
 3. Create certificates on each node by creating a keystore and exporting the certificate.  In this example we will create /usr/share/dse/conf and store the key and trust stores in that directory. 
-```docker exec dse $DSE_JAVA/bin/keytool -genkey -keyalg RSA -alias dse -keystore keystore.dse -storepass cassandra -keypass cassandra -dname "CN=$DSE_IP, OU=None, O=None, L=None, C=None";
 ```
-```docker exec dse2 $DSE_JAVA/bin/keytool -genkey -keyalg RSA -alias dse2 -keystore keystore.dse2 -storepass cassandra -keypass cassandra -dname "CN=$DSE_IP2, OU=None, O=None, L=None, C=None"
+docker exec dse $DSE_JAVA/bin/keytool -genkey -keyalg RSA -alias dse -keystore keystore.dse -storepass cassandra -keypass cassandra -dname "CN=$DSE_IP, OU=None, O=None, L=None, C=None";
+```
+```
+docker exec dse2 $DSE_JAVA/bin/keytool -genkey -keyalg RSA -alias dse2 -keystore keystore.dse2 -storepass cassandra -keypass cassandra -dname "CN=$DSE_IP2, OU=None, O=None, L=None, C=None"
 ```
 
 4. Export the certificate to be copied to other nodes from each node 
-```docker exec dse $DSE_JAVA/bin/keytool -export -alias dse -file dse.cer -keystore keystore.dse;
+```
+docker exec dse $DSE_JAVA/bin/keytool -export -alias dse -file dse.cer -keystore keystore.dse;
 ```
 ```
 docker exec dse2 $DSE_JAVA/bin/keytool -export -alias dse2 -file dse2.cer -keystore keystore.dse2
@@ -88,7 +95,8 @@ docker exec dse2 $DSE_JAVA/bin/keytool -import -v -trustcacerts -alias dse2 -fil
 `docker exec dse2 $DSE_JAVA/bin/keytool -importkeystore -srckeystore keystore.dse2 -destkeystore dse2.p12 -deststoretype PKCS12 -srcstorepass cassandra -deststorepass cassandra`
 
 7. Create a '.pem' file for cqlsh
-```docker exec dse openssl pkcs12 -in dse.p12 -nokeys -out dse.cer.pem -passin pass:cassandra;
+```
+docker exec dse openssl pkcs12 -in dse.p12 -nokeys -out dse.cer.pem -passin pass:cassandra;
 ```
 ```
 docker exec dse openssl pkcs12 -in dse.p12 -nodes -nocerts -out dse.key.pem -passin pass:cassandra;
@@ -103,18 +111,25 @@ docker exec dse2 openssl pkcs12 -in dse2.p12 -nodes -nocerts -out dse2.key.pem -
 8. copy '.cer' files to local docker host
 ```docker cp dse:/opt/dse/dse.cer .;
 ``` 
-```docker cp dse2:/opt/dse/dse2.cer .
+```
+docker cp dse2:/opt/dse/dse2.cer .
 ```
 
 9. copy '.cer' file to other host (so dse.cer to dse2 and dse2.cer to dse)
-```docker cp dse.cer dse2:/opt/dse;
 ```
-```docker cp dse2.cer dse:/opt/dse
+docker cp dse.cer dse2:/opt/dse;
+```
+```
+docker cp dse2.cer dse:/opt/dse
 ```
 
 10. load the '.cer' file to truststore
-`docker exec dse $DSE_JAVA/bin/keytool -import -v -trustcacerts -alias dse2 -file dse2.cer -keystore truststore.dse -storepass cassandra -noprompt;`
-`docker exec dse2 $DSE_JAVA/bin/keytool -import -v -trustcacerts -alias dse -file dse.cer -keystore truststore.dse2 -storepass cassandra -noprompt`
+```
+docker exec dse $DSE_JAVA/bin/keytool -import -v -trustcacerts -alias dse2 -file dse2.cer -keystore truststore.dse -storepass cassandra -noprompt;
+```
+```
+docker exec dse2 $DSE_JAVA/bin/keytool -import -v -trustcacerts -alias dse -file dse.cer -keystore truststore.dse2 -storepass cassandra -noprompt
+```
 
 11. Copy all the key related files to a docker volume for container restart
 ```
@@ -127,9 +142,11 @@ docker exec dse2 bash -c "cp *dse* /etc/dse/conf"
 ## Configure DSE to use encryption
 
 1. Generate DSE system key on each node
-```docker exec dse dsetool createsystemkey AES/ECB/PKCS5Padding 256 system_key;
 ```
-```docker exec dse2 dsetool createsystemkey AES/ECB/PKCS5Padding 256 system_key
+docker exec dse dsetool createsystemkey AES/ECB/PKCS5Padding 256 system_key;
+```
+```
+docker exec dse2 dsetool createsystemkey AES/ECB/PKCS5Padding 256 system_key
 ```
 2. Encrypt keystore and truststore password using dsetool.  First getting bash shell and then typing dsetool command.  Save each of these values for subsequent steps.
 ```
@@ -150,15 +167,14 @@ dsetool encryptconfigvalue
 (~line 480):
 config_encryption_active: true
 ```
-
-    ```
+```
 (~line 782):
 system_info_encryption:
     enabled: true
     cipher_algorithm: AES
     secret_key_strength: 256
     key_name: system_key
-    ```     
+```     
 5. Save this edited dse.yaml file to the conf subdirectory and to the conf2 directory.  It will be picked up on the next dse restart.  Simplest is just do `cp dse.yaml conf` For notes on this look here:  [https://github.com/datastax/docker-images/#using-the-dse-conf-volume]()
 6. Make copy of the cassandra node for each node (don't mix these up).  
 ```
@@ -169,18 +185,16 @@ docker cp dse2:/opt/dse/resources/cassandra/conf/cassandra.yaml conf2
 ```
 7. Edit each cassandra.yaml file
  (~line 1055)  the password comes from step 2 (use correct encrypted password for each node)
- 
-     ```
+```
  server_encryption_options:
     internode_encryption: all
     keystore: /etc/dse/conf/keystore.dse
     keystore_password: ZyOPkOf0RgNDgTZkVK50DQ==
     truststore: /etc/dse/conf/truststore.dse
     truststore_password: ZyOPkOf0RgNDgTZkVK50DQ== 
-     ``` 
+``` 
 (~line 1070)  the password comes from step 2 (use correct encrypted password for each node)
- 
-     ```  
+```  
  client_encryption_options:
     enabled: true
     optional: false
@@ -189,7 +203,7 @@ docker cp dse2:/opt/dse/resources/cassandra/conf/cassandra.yaml conf2
     require_client_auth: true
     truststore: /etc/dse/conf/truststore.dse
     truststore_password: ZyOPkOf0RgNDgTZkVK50DQ==
-     ```  
+```  
 8. Restart the dse docker container: `docker restart dse`
 
 9. Configure cqlsh to work with encryption.  Use the cqlshrc files from the github for each node. 
