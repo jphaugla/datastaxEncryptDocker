@@ -292,7 +292,9 @@ docker exec -it dse cqlsh --ssl  -e "rebuild search index on demo.solr with opti
 5. To generate more records with encryption turned on:
 `docker exec dse /opt/dse/demos/solr_stress/run-benchmark.sh --test-data=./resources/testCqlWrite.txt --loops 110000 --cqlSSL --cqlKeystore=/etc/dse/conf/keystore.dse --cqlKeystorePassword=cassandra --cqlTruststore=/etc/dse/conf/truststore.dse --cqlTruststorePassword=cassandra`
 6. To use dse tool must add ssl parameters to dsetool call
-`docker exec dse bash -c "dsetool -ssl true --sslauth true --truststore-password cassandra --truststore-path /etc/dse/conf/truststore.dse --truststore-type jks --keystore-password cassandra --keystore-path /etc/dse/conf/keystore.dse --keystore-type jks get_core_config demo.solr"
+```
+docker exec dse bash -c "dsetool -ssl true --sslauth true --truststore-password cassandra --truststore-path /etc/dse/conf/truststore.dse --truststore-type jks --keystore-password cassandra --keystore-path /etc/dse/conf/keystore.dse --keystore-type jks get_core_config demo.solr"
+```
 
 ## Conclusion
 At this point, DSE is set up with encryption
