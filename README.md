@@ -105,7 +105,7 @@ docker exec dse2 openssl pkcs12 -in dse2.p12 -nokeys -out dse2.cer.pem -passin p
 docker exec dse2 openssl pkcs12 -in dse2.p12 -nodes -nocerts -out dse2.key.pem -passin pass:cassandra
 ```
 
-7. copy '.cer' files to local docker host
+7. copy '.cer' files to local docker hosts
 ```bash
 docker cp dse:/opt/dse/dse.cer .;
 ``` 
@@ -177,7 +177,7 @@ system_info_encryption:
     secret_key_strength: 256
     key_name: system_key
 ```     
-5. Save this edited dse.yaml file to the conf subdirectory and to the conf2 directory.  It will be picked up on the next dse restart.  Simplest is just do `cp dse.yaml conf` For notes on this look here:  [https://github.com/datastax/docker-images/#using-the-dse-conf-volume](https://github.com/datastax/docker-images/#using-the-dse-conf-volume)
+5. Save this edited dse.yaml file to the conf subdirectory and to the conf2 directory.  It will be picked up on the next dse restart.  Simplest is just do `cp dse.yaml conf` and `cp dse.yaml conf2`For notes on this look here:  [https://github.com/datastax/docker-images/#using-the-dse-conf-volume](https://github.com/datastax/docker-images/#using-the-dse-conf-volume)
 6. Make copy of the cassandra node for each node (don't mix these up).  
 ```bash
 docker cp dse:/opt/dse/resources/cassandra/conf/cassandra.yaml conf;
@@ -207,7 +207,7 @@ docker cp dse2:/opt/dse/resources/cassandra/conf/cassandra.yaml conf2
     truststore_password: ZyOPkOf0RgNDgTZkVK50DQ==
 ```  
 8. Restart the dse docker container: `docker restart dse`
-
+9. Repeat steps 7 and 8 for dse2  (remember, for dse2 the names are different; keystore.dse2, truststore.dse2
 9. Configure cqlsh to work with encryption.  Use the cqlshrc files from the github for each node. 
 ```bash
 docker cp cqlshrc dse:/opt/dse/.cassandra;
