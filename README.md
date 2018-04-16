@@ -321,7 +321,7 @@ export DSE_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddres
 ```
    and:
 ```bash
-export LDAP_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' openldap)
+export DSE2_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' dse2)
 ```
-* use `echo $DSE_IPE` and `echo $LDAP_IP` to view
+* use `echo $DSE_IP` and `echo $DSE2_IP` to view
 
