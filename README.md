@@ -217,14 +217,15 @@ docker cp cqlshrc2 dse2:/opt/dse/.cassandra/cqlshrc
 ```
 this is the file for doc purposes:
 ```bash
-     hostname = dse
-     port = 9042
-     factory = cqlshlib.ssl.ssl_transport_factory
-     [ssl]
-     certfile = /etc/dse/conf/dse.cer.pem
-     validate = true
-     userkey = /etc/dse/conf/dse.key.pem
-     usercert = /etc/dse/conf/dse.cer.pem
+[connection]
+hostname = dse
+port = 9042
+factory = cqlshlib.ssl.ssl_transport_factory
+[ssl]
+certfile = /etc/dse/conf/dse.cer.pem
+validate = true
+userkey = /etc/dse/conf/dse.key.pem
+usercert = /etc/dse/conf/dse.cer.pem
 ```
 10. Test cqlsh in each node by getting bash shell to node and using cqlsh
 

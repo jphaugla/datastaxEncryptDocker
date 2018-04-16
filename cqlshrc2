@@ -1,0 +1,9 @@
+[connection]
+hostname = dse2
+port = 9042
+factory = cqlshlib.ssl.ssl_transport_factory
+[ssl]
+certfile = /etc/dse/conf/dse2.cer.pem
+validate = true
+userkey = /etc/dse/conf/dse2.key.pem
+usercert = /etc/dse/conf/dse2.cer.pem
