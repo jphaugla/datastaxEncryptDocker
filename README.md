@@ -37,21 +37,14 @@ The general instructions for starting the DSE Transparent Data Encryption is her
 https://docs.datastax.com/en/dse/5.1/dse-admin/datastax_enterprise/security/secEncryptEnable.html
 
 This tutorial provides specific commands for this environment, so it shouldn't be necessary to refer to the docs, but they're a handy reference if something goes awry.  
-
-1. Get the IP address and JAVA_HOME of the DataStax servers by running:
+1. Get the JAVA_HOME of the DataStax servers by running:
 ```bash
-export DSE_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' dse)
-```
-```bash
-export DSE_IP2=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' dse2)
 export DSE_JAVA=$(docker exec dse bash -c 'echo "$JAVA_HOME"')
 ```
-use `echo $DSE_IP` and `echo $DSE_IP2` and `echo $DSE_JAVA` to view
-
 2. To enable strong encryption using Java there is a requirement for adding additional encryption libraries to the stock Java install. These assume you comply with US laws around encryption strength for export.
    1. Download the files from Oracle’s website to github home directory:
-        	http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html
-   2. unzip the archive file `unzip jce_policy-8.zip`    
+[http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html](http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html)
+   2. currently this file is downloading as a folder instead of a zip file.  If it is a zip file, unzip the archive file using:  `unzip jce_policy-8.zip`    
    3. Upload the archive file to all DSE servers using JAVA_HOME environment variable from step 1 
 ```bash
 docker cp UnlimitedJCEPolicyJDK8/US_export_policy.jar dse:/$DSE_JAVA/jre/lib/security;
@@ -66,15 +59,15 @@ docker cp UnlimitedJCEPolicyJDK8/US_export_policy.jar dse2:/$DSE_JAVA/jre/lib/se
 docker cp UnlimitedJCEPolicyJDK8/local_policy.jar dse2:/$DSE_JAVA/jre/lib/security
 ``` 
 
-3. Create certificates on each node by creating a keystore and exporting the certificate.  In this example we will create /usr/share/dse/conf and store the key and trust stores in that directory. 
+2. Create certificates on each node by creating a keystore and exporting the certificate.  In this example we will create /usr/share/dse/conf and store the key and trust stores in that directory. 
 ```bash
-docker exec dse $DSE_JAVA/bin/keytool -genkey -keyalg RSA -alias dse -keystore keystore.dse -storepass cassandra -keypass cassandra -dname "CN=$DSE_IP, OU=None, O=None, L=None, C=None";
+docker exec dse $DSE_JAVA/bin/keytool -genkey -keyalg RSA -alias dse -keystore keystore.dse -storepass cassandra -keypass cassandra -dname "CN=dse, OU=None, O=None, L=None, C=None";
 ```
 ```bash
-docker exec dse2 $DSE_JAVA/bin/keytool -genkey -keyalg RSA -alias dse2 -keystore keystore.dse2 -storepass cassandra -keypass cassandra -dname "CN=$DSE_IP2, OU=None, O=None, L=None, C=None"
+docker exec dse2 $DSE_JAVA/bin/keytool -genkey -keyalg RSA -alias dse2 -keystore keystore.dse2 -storepass cassandra -keypass cassandra -dname "CN=dse2, OU=None, O=None, L=None, C=None"
 ```
 
-4. Export the certificate to be copied to other nodes from each node 
+3. Export the certificate to be copied to other nodes from each node 
 ```bash
 docker exec dse $DSE_JAVA/bin/keytool -export -alias dse -file dse.cer -keystore keystore.dse;
 ```
@@ -82,7 +75,7 @@ docker exec dse $DSE_JAVA/bin/keytool -export -alias dse -file dse.cer -keystore
 docker exec dse2 $DSE_JAVA/bin/keytool -export -alias dse2 -file dse2.cer -keystore keystore.dse2
 ```
 
-5. Load the certificate into the trust store on each node
+4. Load the certificate into the trust store on each node
 ```bash
 docker exec dse $DSE_JAVA/bin/keytool -import -v -trustcacerts -alias dse -file dse.cer -keystore truststore.dse -storepass cassandra -noprompt;
 ```
@@ -90,7 +83,7 @@ docker exec dse $DSE_JAVA/bin/keytool -import -v -trustcacerts -alias dse -file 
 docker exec dse2 $DSE_JAVA/bin/keytool -import -v -trustcacerts -alias dse2 -file dse2.cer -keystore truststore.dse2 -storepass cassandra -noprompt
 ```
 
-6. Get certificates in PKS format for cqlsh
+5. Get certificates in PKS format for cqlsh
 ```bash
 docker exec dse $DSE_JAVA/bin/keytool -importkeystore -srckeystore keystore.dse -destkeystore dse.p12 -deststoretype PKCS12 -srcstorepass cassandra -deststorepass cassandra;
 ```
@@ -98,7 +91,7 @@ docker exec dse $DSE_JAVA/bin/keytool -importkeystore -srckeystore keystore.dse 
 docker exec dse2 $DSE_JAVA/bin/keytool -importkeystore -srckeystore keystore.dse2 -destkeystore dse2.p12 -deststoretype PKCS12 -srcstorepass cassandra -deststorepass cassandra
 ```
 
-7. Create a '.pem' file for cqlsh
+6. Create a '.pem' file for cqlsh
 ```bash
 docker exec dse openssl pkcs12 -in dse.p12 -nokeys -out dse.cer.pem -passin pass:cassandra;
 ```
@@ -112,7 +105,7 @@ docker exec dse2 openssl pkcs12 -in dse2.p12 -nokeys -out dse2.cer.pem -passin p
 docker exec dse2 openssl pkcs12 -in dse2.p12 -nodes -nocerts -out dse2.key.pem -passin pass:cassandra
 ```
 
-8. copy '.cer' files to local docker host
+7. copy '.cer' files to local docker host
 ```bash
 docker cp dse:/opt/dse/dse.cer .;
 ``` 
@@ -120,7 +113,7 @@ docker cp dse:/opt/dse/dse.cer .;
 docker cp dse2:/opt/dse/dse2.cer .
 ```
 
-9. copy '.cer' file to other host (so dse.cer to dse2 and dse2.cer to dse)
+8. copy '.cer' file to other host (so dse.cer to dse2 and dse2.cer to dse)
 ```bash
 docker cp dse.cer dse2:/opt/dse;
 ```
@@ -128,7 +121,7 @@ docker cp dse.cer dse2:/opt/dse;
 docker cp dse2.cer dse:/opt/dse
 ```
 
-10. load the '.cer' file to truststore
+9. load the '.cer' file to truststore
 ```bash
 docker exec dse $DSE_JAVA/bin/keytool -import -v -trustcacerts -alias dse2 -file dse2.cer -keystore truststore.dse -storepass cassandra -noprompt;
 ```
@@ -136,7 +129,7 @@ docker exec dse $DSE_JAVA/bin/keytool -import -v -trustcacerts -alias dse2 -file
 docker exec dse2 $DSE_JAVA/bin/keytool -import -v -trustcacerts -alias dse -file dse.cer -keystore truststore.dse2 -storepass cassandra -noprompt
 ```
 
-11. Copy all the key related files to a docker volume for container restart
+10. Copy all the key related files to a docker volume for container restart
 ```bash
 docker exec dse bash -c "cp *dse* /etc/dse/conf";
 ```
@@ -153,7 +146,7 @@ docker exec dse dsetool createsystemkey AES/ECB/PKCS5Padding 256 system_key;
 ```bash
 docker exec dse2 dsetool createsystemkey AES/ECB/PKCS5Padding 256 system_key
 ```
-2. Encrypt keystore and truststore password using dsetool.  First getting bash shell and then typing dsetool command.  Save each of these values for subsequent steps.
+2. Encrypt keystore and truststore password using dsetool.  First getting bash shell and then typing dsetool command.  Save each of these values for subsequent steps.  Manually type a password such as "cassandra" when prompted by dsetool
 ```bash
 docker exec -i -t dse bash
 ```
@@ -166,7 +159,7 @@ docker exec -i -t dse2 bash
 ```bash
 dsetool encryptconfigvalue
 ```
-3. Either use existing provided dse.yaml command with encryption entries complsete or go through the steps by getting a local copy of the dse.yaml file from the dse container.  
+3. Either use existing provided dse.yaml command with encryption entries complete or go through the steps by getting a local copy of the dse.yaml file from the dse container.  
 ```bash
 docker cp dse:/opt/dse/resources/dse/conf/dse.yaml .
 ```  
@@ -315,6 +308,19 @@ docker exec dse bash -c "dsetool -ssl true --sslauth true --truststore-password 
 ```
 
 ## Conclusion
+
 At this point, DSE is set up with encryption
 
+##  Additional Notes/tips
+
+* To get the IP address of the DataStax nodes:
+
+```bash
+export DSE_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' dse)
+```
+   and:
+```bash
+export LDAP_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' openldap)
+```
+* use `echo $DSE_IPE` and `echo $LDAP_IP` to view
 
