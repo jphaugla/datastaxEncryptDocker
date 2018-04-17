@@ -15,7 +15,7 @@ services:
       - ./opscenter:/var/lib/opscenter
       - ./opscenter-clusters:/opt/opscenter/conf/clusters
   main_node:
-    image: "store/datastax/dse-server:5.1.6"
+    image: "datastax/dse-server"
     container_name: "dse"
     hostname: dse
     domainname: example.org
@@ -45,7 +45,7 @@ services:
       - ./cache:/var/lib/cassandra/saved_caches
       - ./confy:/etc/dse/conf
   second_node:
-    image: "store/datastax/dse-server:5.1.6"
+    image: "datastax/dse-server"
     container_name: "dse2"
     hostname: dse2
     domainname: example.org

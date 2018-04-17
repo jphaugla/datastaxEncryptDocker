@@ -12,14 +12,14 @@ The DataStax images are well documented at this github location  [https://github
 ## Getting Started
 1. Prepare Docker environment
 2. Pull this github into a directory  `git clone https://github.com/jphaugla/datastaxEncryptDocker.git`
-3. Follow notes from DataStax Docker github to pull the needed DataStax images.  Directions are here:  [https://github.com/datastax/docker-images/#datastax-platform-overview]().  Don't get too bogged down here.  The pull command is provided with this github in pull.sh. It is requried to have the docker login and subscription complete before running the pull.  The also included docker-compose.yaml handles most everything else.
+3. Follow notes from DataStax Docker github to pull the needed DataStax images.  Directions are here:  [https://github.com/datastax/docker-images/#datastax-platform-overview]().  Don't get too bogged down here as the docker-compose.yaml handles most everything.
 4. Open terminal, then: `docker-compose up -d`
 5. Verify DataStax is working for both hosts: (may need to wait a minute for DSE to start on each node)
 ```bash
-docker exec dse cqlsh -u cassandra -p cassandra -e "desc keyspaces";
+docker exec dse cqlsh dse -u cassandra -p cassandra -e "desc keyspaces";
 ```
 ```bash
-docker exec dse2 cqlsh -u cassandra -p cassandra -e "desc keyspaces"
+docker exec dse2 cqlsh dse2 -u cassandra -p cassandra -e "desc keyspaces"
 ```
 6. Add demo tables and keyspace for later DSE Search testing:
 ```bash
@@ -27,7 +27,7 @@ docker exec dse bash -c '/opt/dse/demos/solr_stress/resources/schema/create-sche
 ```
 7. Add Data
  ```bash
-docker exec dse /opt/dse/demos/solr_stress/run-benchmark.sh --test-data=./resources/testCqlWrite.txt --loops 110000
+docker exec dse /opt/dse/demos/solr_stress/run-benchmark.sh --url=http://dse:8983 --test-data=./resources/testCqlWrite.txt --loops 110000
 ```
 8. Also note, in the home directory for the github repository directory the docker volumes should be created as subdirectories.  To manipulate the dse.yaml file, the local conf subdirectory will be used.  The other dse directories are logs, cache and data.  Additionally, I added a confy directory to hold the encryption files and the system_key_directory
 
@@ -163,18 +163,19 @@ dsetool encryptconfigvalue
 ```bash
 docker cp dse:/opt/dse/resources/dse/conf/dse.yaml .
 ```  
-However, this existing dse.yaml is for 5.1.6 and may not work in subsequent versions.  Also provided in the github is a diff file call dse.yaml.diff
+However, this existing dse.yaml is for 6.0.0 and may not work in subsequent versions.  Also provided in the github is a diff file call dse.yaml.diff
 4. Edit local copy of the dse.yaml being extremely careful to maintain the correct spaces as the yaml is space aware.   Thankfully, any errors are obvious in /var/log/cassandra/system.log on startup failure 
 ```yaml
-(~line 480):
+(~line 494):
 config_encryption_active: true
 ```
 ```yaml
-(~line 782):
+(~line 850):
 system_info_encryption:
     enabled: true
     cipher_algorithm: AES
     secret_key_strength: 256
+    chunk_length_kb: 64
     key_name: system_key
 ```     
 5. Save this edited dse.yaml file to the conf subdirectory and to the conf2 directory.  It will be picked up on the next dse restart.  Simplest is just do `cp dse.yaml conf` and `cp dse.yaml conf2`For notes on this look here:  [https://github.com/datastax/docker-images/#using-the-dse-conf-volume](https://github.com/datastax/docker-images/#using-the-dse-conf-volume)
@@ -186,7 +187,7 @@ docker cp dse:/opt/dse/resources/cassandra/conf/cassandra.yaml conf;
 docker cp dse2:/opt/dse/resources/cassandra/conf/cassandra.yaml conf2
 ```
 7. Edit each cassandra.yaml file
- (~line 1055)  the password comes from step 2 (use correct encrypted password for each node)
+ (~line 957)  the password comes from step 2 (use correct encrypted password for each node)
 ```
  server_encryption_options:
     internode_encryption: all
@@ -195,7 +196,7 @@ docker cp dse2:/opt/dse/resources/cassandra/conf/cassandra.yaml conf2
     truststore: /etc/dse/conf/truststore.dse
     truststore_password: ZyOPkOf0RgNDgTZkVK50DQ== 
 ``` 
-(~line 1070)  the password comes from step 2 (use correct encrypted password for each node)
+(~line 972)  the password comes from step 2 (use correct encrypted password for each node)
 ```yaml  
  client_encryption_options:
     enabled: true
@@ -234,7 +235,7 @@ docker exec -it dse bash
 ```
 
 ```bash
-cqlsh --ssl
+cqlsh dse --ssl
 ```
 
 ```bash
@@ -242,7 +243,7 @@ docker exec -it dse2 bash
 ```
 
 ```bash
-cqlsh --ssl
+cqlsh dse2 --ssl
 ```
 
 ## Enable Transparent Data Encryption on a table.
@@ -261,7 +262,7 @@ docker cp test_table_key dse2:/etc/dse/conf
  
 3. Alter table to turn on encryption
 ```bash
-docker exec dse cqlsh --ssl -e "alter table demo.solr  WITH
+docker exec dse cqlsh dse --ssl -e "alter table demo.solr  WITH
 compression = {
 'sstable_compression': 'EncryptingSnappyCompressor',
 'cipher_algorithm' : 'AES/ECB/PKCS5Padding',
@@ -287,21 +288,21 @@ compression = {
 ## Enable SOLR encryption
 1. turn encryption on the DSE Search 
 ```bash
-docker exec -it dse cqlsh --ssl -e "alter search index config on demo.solr set directoryFactory = 'encrypted'";
+docker exec -it dse cqlsh dse --ssl -e "alter search index config on demo.solr set directoryFactory = 'encrypted'";
 ```
 ```bash
-docker exec -it dse cqlsh --ssl  -e "reload search index on demo.solr"
+docker exec -it dse cqlsh dse --ssl  -e "reload search index on demo.solr"
 ```
 2.  restart for directoryFactory change
 `docker-compose restart`
 3.  rebuild the index
 ```bash 
-docker exec -it dse cqlsh --ssl  -e "rebuild search index on demo.solr with options {deleteAll :true}"
+docker exec -it dse cqlsh dse --ssl  -e "rebuild search index on demo.solr with options {deleteAll :true}"
 ```
 4.  Copy relevant files off the image and use the `strings` command to ensure encryption
 5. To generate more records with encryption turned on:
 ```bash
-docker exec dse /opt/dse/demos/solr_stress/run-benchmark.sh --test-data=./resources/testCqlWrite.txt --loops 110000 --cqlSSL --cqlKeystore=/etc/dse/conf/keystore.dse --cqlKeystorePassword=cassandra --cqlTruststore=/etc/dse/conf/truststore.dse --cqlTruststorePassword=cassandra
+docker exec dse /opt/dse/demos/solr_stress/run-benchmark.sh --url=http://dse:8983 --test-data=./resources/testCqlWrite.txt --loops 110000 --cqlSSL --cqlKeystore=/etc/dse/conf/keystore.dse --cqlKeystorePassword=cassandra --cqlTruststore=/etc/dse/conf/truststore.dse --cqlTruststorePassword=cassandra
 ```
 6. To use dse tool must add ssl parameters to dsetool call
 ```bash
